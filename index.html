@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <title>AdsGoat - AI-Powered Digital Marketing Agency</title>
+    <meta name="description" content="We don't just run campaigns. We build momentum. Transform your marketing with AI-powered optimization, creative automation, and performance-driven strategy." />
+    <meta name="author" content="AdsGoat" />
+    <meta name="keywords" content="digital marketing, AI marketing, campaign optimization, creative automation, performance marketing, growth marketing" />
+
+    <meta property="og:title" content="AdsGoat - AI-Powered Digital Marketing Agency" />
+    <meta property="og:description" content="Transform your marketing with AI-powered optimization, creative automation, and performance-driven strategy." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- ✅ Floating chat button with GIF -->
+    <button class="ag-float" id="openChat" aria-label="Open chat">
+      <img src="./public/smooth pulsing.mp4.gif" alt="Chat Bot" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+    </button>
+
+    <!-- Chat widget -->
+    <div class="ag-chat" id="agChat" role="dialog" aria-label="AdsGoat chat" aria-modal="true">
+      <div class="ag-head">
+        <span class="ag-title">AdsGoat Assistant</span>
+        <button class="ag-close" id="agClose" aria-label="Close chat">✕</button>
+      </div>
+      <div class="ag-body" id="agBody"></div>
+      <div class="ag-typing" id="agTyping" style="display:none">Assistant is typing…</div>
+      <div class="ag-foot">
+        <input class="ag-input" id="agInput" placeholder="Type your message…" aria-label="Chat message input"/>
+        <button class="ag-send" id="agSend" aria-label="Send message">Send</button>
+      </div>
+    </div>
+
+    <!-- Styles for float button + chat -->
+    <style>
+      .ag-float{
+        position:fixed;right:14px;bottom:14px;width:50px;height:50px;border-radius:50%;
+        border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.16);
+        background:transparent;z-index:9999;overflow:hidden;padding:0;
+      }
+    
+      .ag-chat{
+        position:fixed;right:14px;bottom:72px;width:300px;height:400px;max-width:94vw;max-height:70vh;
+        display:none;flex-direction:column;background:#fff;border:1px solid #eee;border-radius:14px;
+        box-shadow:0 12px 40px rgba(0,0,0,.18);overflow:hidden;z-index:10000;
+        color:#000; /* ✅ default text color inside chat is black */
+      }
+    
+      .ag-chat.ag-open{ display:flex; }
+    
+      .ag-head{
+        padding:10px 12px;background:#0B0B0B;color:#F8F8F8;font-weight:600;
+        display:flex;align-items:center;justify-content:space-between
+      }
+    
+      .ag-title{ font-size:14px }
+    
+      .ag-close{
+        background:none;border:0;color:#F8F8F8;font-size:18px;cursor:pointer;line-height:1
+      }
+    
+      .ag-body{
+        flex:1;overflow:auto;padding:10px;background:#fafafa;color:#000; /* ✅ black text */
+      }
+    
+      .ag-msg{
+        max-width:85%;margin:6px 0;padding:8px 10px;border-radius:12px;
+        line-height:1.35;font-size:14px;white-space:pre-wrap;color:#000; /* ✅ black text */
+      }
+    
+      .ag-user{
+        background:#38E54D;color:#0B0B0B;margin-left:auto;border-bottom-right-radius:4px
+      }
+    
+      .ag-bot{
+        background:#fff;border:1px solid #eee;color:#000;margin-right:auto;border-bottom-left-radius:4px /* ✅ black */
+      }
+    
+      .ag-typing{
+        font-size:12px;color:#000;margin:4px 8px; /* ✅ black typing indicator */
+      }
+    
+      .ag-foot{
+        display:flex;gap:8px;padding:8px;background:#fff;border-top:1px solid #eee
+      }
+    
+      .ag-input{
+        flex:1;border:1px solid #ddd;border-radius:10px;padding:9px 10px;
+        font-size:14px;color:#000;background:#fff; /* ✅ black input text */
+      }
+    
+      .ag-send{
+        background:#0B0B0B;color:#F8F8F8;border:none;border-radius:10px;
+        padding:0 12px;font-weight:600;cursor:pointer
+      }
+    
+      @media (max-width:640px){
+        .ag-chat{ right:8px;left:8px;bottom:70px;width:auto;height:60vh;max-width:none }
+        .ag-float{ right:12px;bottom:12px }
+        .ag-title,.ag-msg,.ag-input{ font-size:13px }
+      }
+    </style>
+    
+
+    <!-- Chat logic -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const N8N_WEBHOOK_URL = "https://vyaktimetrics.app.n8n.cloud/webhook/chat";
+        const N8N_TOKEN = null;
+        const DEFAULT_WELCOME = "Hi! I’m the ADSGOAT assistant. What brings you in today— PPC, SEO, Social, Website Applications, Content, or Automation?";
+
+        const els = {
+          openBtn: document.getElementById('openChat'),
+          chat:    document.getElementById('agChat'),
+          close:   document.getElementById('agClose'),
+          body:    document.getElementById('agBody'),
+          input:   document.getElementById('agInput'),
+          send:    document.getElementById('agSend'),
+          typing:  document.getElementById('agTyping')
+        };
+
+        function openChat() {
+          els.chat.classList.add('ag-open');
+          if (els.body.childElementCount === 0) addMsg(DEFAULT_WELCOME, 'bot');
+          els.input.focus();
+        }
+        function closeChat() { els.chat.classList.remove('ag-open'); }
+        function toggleChat() { els.chat.classList.contains('ag-open') ? closeChat() : openChat(); }
+
+        els.openBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleChat(); });
+        els.close.addEventListener('click', closeChat);
+        window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeChat(); });
+
+        function addMsg(text, who){
+          const div = document.createElement('div');
+          div.className = 'ag-msg ' + (who === 'user' ? 'ag-user' : 'ag-bot');
+          div.textContent = text;
+          els.body.appendChild(div);
+          els.body.scrollTop = els.body.scrollHeight;
+        }
+
+        function extractReplyFromJSON(data){
+          const pick = (o) => {
+            if(!o || typeof o !== 'object') return null;
+            if(typeof o.output === 'string') return o.output;
+            if(typeof o.reply === 'string') return o.reply;
+            if(typeof o.message === 'string') return o.message;
+            if(Array.isArray(o.choices) && o.choices[0]?.message?.content) return o.choices[0].message.content;
+            return null;
+          };
+          if(Array.isArray(data)){
+            const outs = data.map(pick).filter(Boolean);
+            return outs[0] || "";
+          } else {
+            return pick(data) || "";
+          }
+        }
+
+        async function send(){
+          const text = els.input.value.trim();
+          if(!text) return;
+          addMsg(text, 'user');
+          els.input.value = '';
+          els.typing.style.display = 'block';
+
+          try{
+            const headers = { "Content-Type":"application/json", "Accept":"application/json" };
+            if(N8N_TOKEN) headers["x-adsgoat-token"] = N8N_TOKEN;
+
+            if (!localStorage.ag_sid) {
+              localStorage.ag_sid = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+            }
+
+            const res = await fetch(N8N_WEBHOOK_URL, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                sessionid: localStorage.ag_sid,
+                message: text,
+                meta: { page: location.href, tz: Intl.DateTimeFormat().resolvedOptions().timeZone, ua: navigator.userAgent }
+              })
+            });
+
+            const raw = await res.text();
+            let reply = "";
+            try { reply = extractReplyFromJSON(JSON.parse(raw)); }
+            catch { reply = raw.replace(/<[^>]+>/g, ""); }
+
+            els.typing.style.display = 'none';
+            addMsg(reply || "No reply.", 'bot');
+          }catch(e){
+            els.typing.style.display = 'none';
+            addMsg("Network error. Please try again.", 'bot');
+          }
+        }
+
+        els.send.addEventListener('click', send);
+        els.input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') send(); });
+      });
+    </script>
+  </body>
+</html>
